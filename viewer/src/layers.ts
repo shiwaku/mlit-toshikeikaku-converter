@@ -14,6 +14,16 @@ export interface ThemeDef {
   geom: Geom
   /** 初期表示 ON/OFF */
   on: boolean
+  /** 不透明度（未指定は既定値）。UI のスライダーで変更される。 */
+  opacity?: number
+}
+
+/** テーマ既定の不透明度。 */
+export function defaultOpacity(def: ThemeDef): number {
+  return def.geom === 'line' ? 0.9 : FILL_OPACITY
+}
+export function opacityOf(def: ThemeDef): number {
+  return def.opacity ?? defaultOpacity(def)
 }
 
 /**
@@ -172,7 +182,7 @@ export function paintFor(def: ThemeDef): LayerPaint {
       paint: {
         'line-color': color,
         'line-width': ['interpolate', ['linear'], ['zoom'], 8, 1, 15, 4],
-        'line-opacity': 0.9,
+        'line-opacity': opacityOf(def),
       },
     }
   }
@@ -192,8 +202,8 @@ export function paintFor(def: ThemeDef): LayerPaint {
   return {
     type: 'fill',
     // 参考サイト（toshikeikaku-info.jp）と同様、塗りは fill-opacity 0.7 を基本とし、
-    // 併せて各色の rgba アルファ（防火0.6 等）も効かせる。
-    paint: { 'fill-color': fill, 'fill-opacity': FILL_OPACITY, 'fill-outline-color': outline },
+    // 併せて各色の rgba アルファ（防火0.6 等）も効かせる。不透明度は UI で変更可能。
+    paint: { 'fill-color': fill, 'fill-opacity': opacityOf(def), 'fill-outline-color': outline },
   }
 }
 
@@ -232,10 +242,6 @@ const S = (p: Record<string, unknown>, k: string): string => {
   return v === undefined || v === null || v === '' ? '' : String(v)
 }
 
-function place(p: Record<string, unknown>): string {
-  return [S(p, 'Pref'), S(p, 'Cityname')].filter(Boolean).join(' ')
-}
-
 /** テーマごとの主表示ラベル（名称/種別）。 */
 function primaryLabel(key: string, p: Record<string, unknown>): string {
   if (key === 'youto') {
@@ -259,23 +265,20 @@ export function hoverHtml(key: string, name: string, p: Record<string, unknown>)
   return `<b>${label || name}</b>${label ? ` <span class="tt-sub">${name}</span>` : ''}`
 }
 
+function esc(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string)
+}
+
 export function popupHtml(key: string, name: string, p: Record<string, unknown>): string {
-  const rows: [string, string][] = []
-  const add = (dt: string, v: string): void => {
-    if (v) rows.push([dt, v])
-  }
-  if (key === 'youto') {
-    add('建蔽率', S(p, 'BCR') ? `${S(p, 'BCR')}%` : '')
-    add('容積率', S(p, 'FAR') ? `${S(p, 'FAR')}%` : '')
-  }
-  add('種別', S(p, 'AreaType') || S(p, 'DistType'))
-  add('名称', S(p, 'DistName') || S(p, 'ParkName') || S(p, 'AreaName') || S(p, 'FaciName'))
-  add('所在', place(p))
   const title = primaryLabel(key, p) || name
-  const dl = rows.map(([dt, dd]) => `<dt>${dt}</dt><dd>${dd}</dd>`).join('')
+  // クリック時は全属性を表示する（空値は除外）。
+  const rows = Object.entries(p)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`)
+    .join('')
   return (
-    `<div class="pp-title">${title}</div>` +
-    `<div class="pp-sub">${name}</div>` +
-    (dl ? `<dl class="pp-dl">${dl}</dl>` : '')
+    `<div class="pp-title">${esc(title)}</div>` +
+    `<div class="pp-sub">${esc(name)}</div>` +
+    (rows ? `<dl class="pp-dl pp-all">${rows}</dl>` : '')
   )
 }

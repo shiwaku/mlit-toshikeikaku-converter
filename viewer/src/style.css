@@ -94,10 +94,10 @@ body {
 
 .panel h1 {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
+  letter-spacing: 0;
+  line-height: 1.25;
 }
 
 .head-actions {
@@ -292,6 +292,49 @@ body {
   height: 8px;
   border-radius: 4px;
   border: 1px solid var(--line-2);
+}
+
+/* ---- レイヤー不透明度スライダー ---- */
+.layer-opacity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 4px 44px;
+}
+
+.layer-opacity[hidden] {
+  display: none;
+}
+
+.layer-opacity input[type='range'] {
+  flex: 1;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.op-val {
+  flex: none;
+  width: 34px;
+  text-align: right;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* クリック時の全属性ポップアップ（多数の属性はスクロール） */
+.pp-dl.pp-all {
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pp-dl.pp-all dt {
+  word-break: break-all;
+}
+
+.pp-dl.pp-all dd {
+  word-break: break-all;
 }
 
 /* ---- フィールド見出し / ミニボタン ---- */

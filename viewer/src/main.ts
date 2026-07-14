@@ -3,7 +3,7 @@ import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 import { getBasemapStyle, type Basemap } from './basemap'
-import { THEMES, type ThemeDef, hoverHtml, legendFor, paintFor, popupHtml } from './layers'
+import { THEMES, type ThemeDef, hoverHtml, legendFor, opacityOf, paintFor, popupHtml } from './layers'
 import { applyThemeAttr, initialTheme, type Theme } from './theme'
 import './style.css'
 
@@ -62,11 +62,13 @@ const themeBtn = document.getElementById('theme-btn') as HTMLButtonElement
 const renderThemeBtn = (): void => {
   themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙'
 }
-// 背景スタイル差し替え後、新スタイルの読み込み完了（styledata）を待ってデータ層を再追加する。
-// setStyle 直後は旧スタイルが loaded 扱いのままのことがあり、即時追加すると差し替えで消えるため。
+// 背景スタイルを差し替える。ラスタ（写真）↔ベクタ（淡色）の切替では diff 適用が
+// 効かず背景が入れ替わらないため diff:false で完全に再構築する。
+// setStyle 直後は isStyleLoaded() が旧スタイルで true を返して競合するため、
+// 新スタイルの描画が落ち着く idle を待ってからデータ層を再追加する。
 function reloadStyle(): void {
-  map.setStyle(getBasemapStyle(base, theme))
-  map.once('styledata', () => addDataLayers())
+  map.setStyle(getBasemapStyle(base, theme), { diff: false })
+  map.once('idle', () => addDataLayers())
 }
 themeBtn.addEventListener('click', () => {
   theme = theme === 'dark' ? 'light' : 'dark'
@@ -125,12 +127,33 @@ function buildToggles(): void {
 
     label.append(input, sw, text)
 
+    // 不透明度スライダー（有効時のみ表示）
+    const opac = document.createElement('div')
+    opac.className = 'layer-opacity'
+    opac.hidden = !def.on
+    const range = document.createElement('input')
+    range.type = 'range'
+    range.min = '0'
+    range.max = '1'
+    range.step = '0.05'
+    range.value = String(opacityOf(def))
+    range.setAttribute('aria-label', `${def.name}の不透明度`)
+    const val = document.createElement('span')
+    val.className = 'op-val'
+    val.textContent = `${Math.round(opacityOf(def) * 100)}%`
+    range.addEventListener('input', () => {
+      const v = Number(range.value)
+      val.textContent = `${Math.round(v * 100)}%`
+      setLayerOpacity(def, v)
+    })
+    opac.append(range, val)
+
     const legend = document.createElement('div')
     legend.className = 'layer-legend'
     legend.innerHTML = legendMarkup(def)
     legend.hidden = !def.on
 
-    item.append(label, legend)
+    item.append(label, opac, legend)
     layersDiv.append(item)
   }
 }
@@ -139,8 +162,16 @@ function setLayerVisible(def: ThemeDef, on: boolean): void {
   def.on = on
   const id = layerId(def.key)
   if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
-  const legend = layersDiv.querySelector<HTMLElement>(`.layer-item[data-key="${def.key}"] .layer-legend`)
-  if (legend) legend.hidden = !on
+  const item = layersDiv.querySelector<HTMLElement>(`.layer-item[data-key="${def.key}"]`)
+  item?.querySelector<HTMLElement>('.layer-legend')?.toggleAttribute('hidden', !on)
+  item?.querySelector<HTMLElement>('.layer-opacity')?.toggleAttribute('hidden', !on)
+}
+
+function setLayerOpacity(def: ThemeDef, v: number): void {
+  def.opacity = v
+  const id = layerId(def.key)
+  if (!map.getLayer(id)) return
+  map.setPaintProperty(id, def.geom === 'line' ? 'line-opacity' : 'fill-opacity', v)
 }
 
 const allOffBtn = document.getElementById('all-off') as HTMLButtonElement
