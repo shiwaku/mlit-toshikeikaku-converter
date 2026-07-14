@@ -18,8 +18,20 @@ export interface ThemeDef {
   opacity?: number
 }
 
+/**
+ * 広域を覆う単色レイヤーは既定不透明度を低くして地図を覆い隠さない
+ * （都市計画区域などを ON にすると画面が真っ白/灰色に潰れる問題への対処）。
+ */
+const DEFAULT_OPACITY: Record<string, number> = {
+  tokei: 0.15, // 都市計画区域（広域・灰色）
+  jyuntoshi: 0.2, // 準都市計画区域（広域・赤褐）
+  ritteki: 0.3, // 立地適正化計画区域（広域）
+  senbiki: 0.55, // 区域区分（市街化/調整の2色。やや下げる）
+}
+
 /** テーマ既定の不透明度。 */
 export function defaultOpacity(def: ThemeDef): number {
+  if (def.key in DEFAULT_OPACITY) return DEFAULT_OPACITY[def.key]
   return def.geom === 'line' ? 0.9 : FILL_OPACITY
 }
 export function opacityOf(def: ThemeDef): number {
@@ -270,12 +282,54 @@ function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string)
 }
 
+// 属性名（ローマ字）→ 和名。出典: 都市計画決定GISデータ データ定義書。
+const ATTR_LABELS: Record<string, string> = {
+  Pref: '都道府県',
+  Citycode: '市区町村コード',
+  Cityname: '市区町村名',
+  YoutoName: '用途地域名',
+  YoutoCode: '用途地域コード',
+  FAR: '容積率',
+  BCR: '建蔽率',
+  AreaType: '種類',
+  AreaName: '名称',
+  AreaCode: '種類コード',
+  TokeiName: '都市計画区域名',
+  TokeiType: '種類',
+  TokeiCode: '種類コード',
+  DistName: '名称',
+  DistType: '種類',
+  DistCode: '種類コード',
+  ParkName: '公園名',
+  ParkType: '種類',
+  ParkCode: '種類コード',
+  DouroType: '種類',
+  DouroCode: '種類コード',
+  FaciName: '施設名',
+  FaciType: '種類',
+  FaciCode: '種類コード',
+  INDate: '当初決定日',
+  FNDate: '最終告示日',
+  INNumber: '当初告示番号',
+  FNNumber: '最終告示番号',
+  ValidType: '効力発生日の種類',
+  Custodian: '決定者',
+}
+function attrLabel(key: string): string {
+  return ATTR_LABELS[key] ?? key
+}
+function fmtValue(key: string, v: unknown): string {
+  const s = String(v)
+  if ((key === 'FAR' || key === 'BCR') && /^\d/.test(s)) return `${s}%`
+  return s
+}
+
 export function popupHtml(key: string, name: string, p: Record<string, unknown>): string {
   const title = primaryLabel(key, p) || name
   // クリック時は全属性を表示する（空値は除外）。
   const rows = Object.entries(p)
     .filter(([, v]) => v !== null && v !== undefined && v !== '')
-    .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`)
+    .map(([k, v]) => `<dt>${esc(attrLabel(k))}</dt><dd>${esc(fmtValue(k, v))}</dd>`)
     .join('')
   return (
     `<div class="pp-title">${esc(title)}</div>` +
