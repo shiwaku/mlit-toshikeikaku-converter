@@ -1,4 +1,4 @@
-# toshi-tosiko-tk — 都市計画決定GISデータ PMTiles パイプライン
+# 都市計画決定GISデータ PMTiles パイプライン
 
 国土交通省 都市局が公開する
 **[都市計画決定GISデータ 全国データダウンロードページ](https://www.mlit.go.jp/toshi/tosiko/toshi_tosiko_tk_000182.html)**
@@ -74,11 +74,27 @@ make catalog
 最新版の PMTiles は Release の固定 URL から取得できます:
 
 ```
-https://github.com/shiwaku/toshi-tosiko-tk/releases/latest/download/youto.pmtiles
+https://github.com/shiwaku/mlit-toshikeikaku-converter/releases/latest/download/youto.pmtiles
 ```
 
-MapLibre GL JS + [pmtiles](https://github.com/protomaps/PMTiles) プロトコルでの
-表示サンプルを [`docs/index.html`](docs/index.html) に同梱しています（GitHub Pages で公開可能）。
+> ⚠️ Release アセットは CORS ヘッダを返さないため、ブラウザから直接 fetch（Range 取得）はできません。
+> Web 地図に組み込む場合は PMTiles を自分のホスト（同一オリジン）へ配置してください。
+
+### ビューア（`viewer/`）
+
+MapLibre GL JS + [pmtiles](https://github.com/protomaps/PMTiles) + 国土地理院 最適化ベクトルタイルの
+モダンなビューア（Vite + TypeScript / ライト・ダークテーマ）を同梱しています。
+用途地域などの配色は [都市計画情報](https://toshikeikaku-info.jp/) を参考にしています。
+
+```bash
+cd viewer
+npm install
+npm run dev      # http://localhost:8000（dev サーバーが ../dist/*.pmtiles を Range 配信）
+```
+
+**公開**: [`.github/workflows/pages.yml`](.github/workflows/pages.yml) が最新 Release の PMTiles を
+ビューアに同梱して GitHub Pages へデプロイします（同一オリジン配信）。
+公開先 → https://shiwaku.github.io/mlit-toshikeikaku-converter/
 
 ## ディレクトリ構成
 
@@ -87,7 +103,7 @@ src/tosiko_pmtiles/   スクレイプ・DL・変換・カタログのコード
 data/themes.json      テーマコード → 日本語名
 versions/             版ごとの manifest（監査証跡・コミット対象）
 versions.json         版の履歴インデックス
-docs/index.html       MapLibre + PMTiles ビューア（任意）
+viewer/               MapLibre + PMTiles ビューア（Vite + TypeScript）
 raw/ dist/            中間・出力物（.gitignore、コミットしない）
 ```
 

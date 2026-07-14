@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>都市計画決定GISデータ マップ</title>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="tooltip" class="map-tooltip" hidden></div>
+
+  <section id="panel" class="panel" aria-label="コントロールパネル">
+    <header class="panel-head">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">🗺️</span>
+        <h1>都市計画決定GIS</h1>
+      </div>
+      <div class="head-actions">
+        <button id="theme-btn" class="icon-btn" type="button" title="テーマ切替" aria-label="テーマ切替"></button>
+        <button id="collapse-btn" class="icon-btn" type="button" title="パネル開閉" aria-label="パネル開閉"></button>
+      </div>
+    </header>
+
+    <div id="panel-body" class="panel-body">
+      <div class="field">
+        <div class="field-head">
+          <span class="field-label">レイヤー</span>
+          <div class="field-actions">
+            <button id="all-off" class="mini-btn" type="button">全OFF</button>
+          </div>
+        </div>
+        <div id="layers" class="toggles"></div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">凡例</span>
+        <div id="legend" class="legend"></div>
+      </div>
+
+      <footer class="panel-foot">
+        出典: 国土交通省 都市局「都市計画決定GISデータ」（参考情報）<br />
+        配色: <a href="https://toshikeikaku-info.jp/" target="_blank" rel="noopener">都市計画情報</a> を参考<br />
+        背景: 国土地理院 最適化ベクトルタイル
+      </footer>
+    </div>
+  </section>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

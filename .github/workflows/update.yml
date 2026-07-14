@@ -100,7 +100,11 @@ jobs:
             echo "コミットする変更はありません"
           else
             git commit -m "data: 版 ${{ steps.check.outputs.version }} を反映"
-            git push
+            # 実行中に main が進んでいても取り込んで push（非fast-forward対策）
+            for i in 1 2 3; do
+              git pull --rebase origin "${GITHUB_REF_NAME}" && git push && break
+              echo "push 再試行 ($i) …"; sleep 3
+            done
           fi
 
       - name: Summary

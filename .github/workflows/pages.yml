@@ -1,0 +1,67 @@
+name: deploy-viewer
+
+# ビューア（viewer/）をビルドし、最新 Release の PMTiles を同梱して GitHub Pages へ配信する。
+# 手動実行、または viewer/ の変更を main に push したときに動く。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "viewer/**"
+      - ".github/workflows/pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  # Pages のサブパス（= リポジトリ名）配下に PMTiles を置く
+  PMTILES_BASE: /mlit-toshikeikaku-converter/pmtiles
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download PMTiles from latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download --repo "$GITHUB_REPOSITORY" \
+            --pattern '*.pmtiles' --dir dist
+          echo "取得: $(ls dist/*.pmtiles | wc -l) PMTiles"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+
+      - name: Build viewer
+        working-directory: viewer
+        run: |
+          npm ci
+          VITE_PMTILES_BASE="$PMTILES_BASE" npm run build
+
+      - name: Bundle PMTiles
+        run: |
+          mkdir -p viewer/dist/pmtiles
+          cp dist/*.pmtiles viewer/dist/pmtiles/
+          touch viewer/dist/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: viewer/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
