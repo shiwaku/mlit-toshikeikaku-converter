@@ -1,10 +1,8 @@
 name: update-pmtiles
 
-# 週次（毎週火曜 06:00 JST = 月曜 21:00 UTC）と手動実行で、
-# 提供元データの更新を検知して PMTiles を再生成し、Release として配信する。
+# 手動実行（workflow_dispatch）専用。実行時に提供元データの更新を検知し、
+# 更新があれば（または force 指定時に）PMTiles を再生成して Release として配信する。
 on:
-  schedule:
-    - cron: "0 21 * * 1"
   workflow_dispatch:
     inputs:
       force:

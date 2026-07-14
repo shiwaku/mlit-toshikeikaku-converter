@@ -8,7 +8,7 @@
 - **DLツール** — ダウンロードページを毎回スクレイプし、47都道府県の GeoJSON zip を取得・展開
 - **コンバーター** — GeoJSON → PMTiles（テーマ別 / 都道府県別を選択可）
 - **バージョン管理** — 版ごとに GitHub Release を作成。**過去版はそのまま残る**
-- **自動化** — GitHub Actions（週次 + 手動）で 更新検知 → 変換 → 配信 を無人実行
+- **ワンクリック更新** — GitHub Actions の手動実行で 更新検知 → 変換 → 配信 を一括処理
 
 > ⚠️ 本データは国土交通省が提供する**参考情報**です。概ねの位置を示すものであり、
 > 建築確認等の公式手続に用いることは想定されていません。最新でない場合があります。
@@ -60,7 +60,7 @@ make catalog
 
 [`.github/workflows/update.yml`](.github/workflows/update.yml) が
 
-1. 週次（cron）または手動（`workflow_dispatch`）で起動
+1. **手動（`workflow_dispatch`）で起動**（Actions タブから実行。定期実行は行いません）
 2. `check-update` で提供元の更新を検知（`content-ID` の変化で判定）
 3. 変更があれば ダウンロード → 変換 → カタログ生成
 4. `data-<YYYYMMDD>` タグの **Release** を作成し、`*.pmtiles` と `manifest.json` を添付
