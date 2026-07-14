@@ -85,17 +85,21 @@ type ThemeStyle =
   | { kind: 'cats'; prop: string; cats: Record<string, Cat>; fallback: Cat }
 
 const BLACK = 'rgba(0,0,0,1)'
+/** 塗りレイヤー共通の不透明度（参考サイトの既定値 0.7）。色の rgba アルファと乗算される。 */
+const FILL_OPACITY = 0.7
 
+// 色は https://toshikeikaku-info.jp/ の定義に準拠（rgba のアルファもサイトの値を踏襲）。
+// サイト未収録のテーマはアルファ 1 とし、共通の fill-opacity 0.7 で透過させる。
 const STYLES: Record<string, ThemeStyle> = {
   youto: { kind: 'youto' },
   senbiki: {
     kind: 'cats',
     prop: 'AreaType',
     cats: {
-      市街化区域: { label: '市街化区域', fill: 'rgba(255,250,190,0.85)', outline: 'rgba(255,160,230,1)' },
-      市街化調整区域: { label: '市街化調整区域', fill: 'rgba(220,220,220,0.7)', outline: 'rgba(255,160,230,1)' },
+      市街化区域: { label: '市街化区域', fill: 'rgba(255,250,190,1)', outline: 'rgba(255,160,230,1)' },
+      市街化調整区域: { label: '市街化調整区域', fill: 'rgba(220,220,220,1)', outline: 'rgba(255,160,230,1)' },
     },
-    fallback: { label: 'その他', fill: 'rgba(210,210,210,0.5)', outline: 'rgba(160,160,160,1)' },
+    fallback: { label: 'その他', fill: 'rgba(210,210,210,1)', outline: 'rgba(160,160,160,1)' },
   },
   bouka: {
     kind: 'cats',
@@ -110,34 +114,34 @@ const STYLES: Record<string, ThemeStyle> = {
     kind: 'cats',
     prop: 'AreaType',
     cats: {
-      立地適正化計画区域: { label: '立地適正化計画区域', fill: 'rgba(215,250,165,0.5)', outline: 'rgba(160,195,95,1)' },
-      居住誘導区域: { label: '居住誘導区域', fill: 'rgba(0,150,0,0.4)', outline: 'rgba(0,0,255,1)' },
-      都市機能誘導区域: { label: '都市機能誘導区域', fill: 'rgba(0,150,0,0.4)', outline: 'rgba(255,0,0,1)' },
+      立地適正化計画区域: { label: '立地適正化計画区域', fill: 'rgba(215,250,165,1)', outline: 'rgba(160,195,95,1)' },
+      居住誘導区域: { label: '居住誘導区域', fill: 'rgba(0,150,0,0.5)', outline: 'rgba(0,0,255,1)' },
+      都市機能誘導区域: { label: '都市機能誘導区域', fill: 'rgba(0,150,0,0.5)', outline: 'rgba(255,0,0,1)' },
     },
-    fallback: { label: 'その他', fill: 'rgba(180,210,120,0.4)', outline: 'rgba(120,150,70,1)' },
+    fallback: { label: 'その他', fill: 'rgba(215,250,165,1)', outline: 'rgba(160,195,95,1)' },
   },
-  tokei: { kind: 'single', fill: 'rgba(200,200,200,0.3)', outline: 'rgba(100,100,100,1)' },
-  jyuntoshi: { kind: 'single', fill: 'rgba(200,50,20,0.35)', outline: 'rgba(200,50,20,1)' },
-  koudoti: { kind: 'single', fill: 'rgba(230,200,170,0.6)', outline: 'rgba(120,90,40,1)' },
-  koudori: { kind: 'single', fill: 'rgba(200,200,200,0.6)', outline: BLACK },
-  tokureiyouseki: { kind: 'single', fill: 'rgba(180,150,220,0.5)', outline: 'rgba(120,90,180,1)' },
-  kousoujyukyo: { kind: 'single', fill: 'rgba(120,180,255,0.5)', outline: 'rgba(40,100,200,1)' },
-  kyojyuchosei: { kind: 'single', fill: 'rgba(0,150,0,0.35)', outline: 'rgba(0,100,0,1)' },
+  tokei: { kind: 'single', fill: 'rgba(200,200,200,1)', outline: 'rgba(100,100,100,1)' },
+  jyuntoshi: { kind: 'single', fill: 'rgba(200,50,20,0.5)', outline: 'rgba(200,50,20,1)' },
+  koudoti: { kind: 'single', fill: 'rgba(230,200,170,1)', outline: 'rgba(120,90,40,1)' },
+  koudori: { kind: 'single', fill: 'rgba(200,200,200,0.7)', outline: BLACK },
+  tokureiyouseki: { kind: 'single', fill: 'rgba(180,150,220,1)', outline: 'rgba(120,90,180,1)' },
+  kousoujyukyo: { kind: 'single', fill: 'rgba(120,180,255,1)', outline: 'rgba(40,100,200,1)' },
+  kyojyuchosei: { kind: 'single', fill: 'rgba(0,150,0,0.5)', outline: 'rgba(0,100,0,1)' },
   tkbt: { kind: 'single', fill: 'rgba(255,200,255,0.5)', outline: 'rgba(255,102,204,1)' },
   tokuteiyouto: { kind: 'single', fill: 'rgba(200,200,50,0.5)', outline: 'rgba(200,200,50,1)' },
-  tokuteiyuudou: { kind: 'single', fill: 'rgba(255,180,120,0.5)', outline: 'rgba(200,120,60,1)' },
-  tokuteibou: { kind: 'single', fill: 'rgba(255,120,120,0.5)', outline: 'rgba(200,60,60,1)' },
-  fuuchichiku: { kind: 'single', fill: 'rgba(50,200,20,0.4)', outline: 'rgba(50,150,20,1)' },
-  ryokukachiiki: { kind: 'single', fill: 'rgba(120,220,120,0.4)', outline: 'rgba(30,150,30,1)' },
+  tokuteiyuudou: { kind: 'single', fill: 'rgba(255,180,120,1)', outline: 'rgba(200,120,60,1)' },
+  tokuteibou: { kind: 'single', fill: 'rgba(255,120,120,1)', outline: 'rgba(200,60,60,1)' },
+  fuuchichiku: { kind: 'single', fill: 'rgba(50,200,20,0.5)', outline: 'rgba(50,150,20,1)' },
+  ryokukachiiki: { kind: 'single', fill: 'rgba(120,220,120,1)', outline: 'rgba(30,150,30,1)' },
   tokuryoku: { kind: 'single', fill: 'rgba(34,139,34,0.5)', outline: 'rgba(0,100,0,1)' },
-  rekifuu: { kind: 'single', fill: 'rgba(150,120,80,0.5)', outline: 'rgba(110,80,40,1)' },
-  toshisaisei: { kind: 'single', fill: 'rgba(255,100,180,0.5)', outline: 'rgba(200,40,120,1)' },
-  chikukei: { kind: 'single', fill: 'rgba(255,170,0,0.4)', outline: 'rgba(200,120,0,1)' },
-  tochiku: { kind: 'single', fill: 'rgba(255,140,90,0.45)', outline: 'rgba(200,90,40,1)' },
-  kouen: { kind: 'single', fill: 'rgba(255,255,80,0.6)', outline: 'rgba(30,180,30,1)' },
-  soubou: { kind: 'single', fill: 'rgba(120,120,200,0.4)', outline: 'rgba(60,60,150,1)' },
-  fukkousaiseikyoten: { kind: 'single', fill: 'rgba(200,150,100,0.5)', outline: 'rgba(150,100,60,1)' },
-  douro: { kind: 'single', fill: 'rgba(0,0,255,0.9)', outline: 'rgba(0,0,255,1)' },
+  rekifuu: { kind: 'single', fill: 'rgba(150,120,80,1)', outline: 'rgba(110,80,40,1)' },
+  toshisaisei: { kind: 'single', fill: 'rgba(255,100,180,1)', outline: 'rgba(200,40,120,1)' },
+  chikukei: { kind: 'single', fill: 'rgba(255,170,0,1)', outline: 'rgba(200,120,0,1)' },
+  tochiku: { kind: 'single', fill: 'rgba(255,140,90,1)', outline: 'rgba(200,90,40,1)' },
+  kouen: { kind: 'single', fill: 'rgba(255,255,80,1)', outline: 'rgba(30,180,30,1)' },
+  soubou: { kind: 'single', fill: 'rgba(120,120,200,1)', outline: 'rgba(60,60,150,1)' },
+  fukkousaiseikyoten: { kind: 'single', fill: 'rgba(200,150,100,1)', outline: 'rgba(150,100,60,1)' },
+  douro: { kind: 'single', fill: 'rgba(0,0,255,1)', outline: 'rgba(0,0,255,1)' },
 }
 
 function youtoMatch(): ExpressionSpecification {
@@ -187,7 +191,9 @@ export function paintFor(def: ThemeDef): LayerPaint {
   }
   return {
     type: 'fill',
-    paint: { 'fill-color': fill, 'fill-outline-color': outline },
+    // 参考サイト（toshikeikaku-info.jp）と同様、塗りは fill-opacity 0.7 を基本とし、
+    // 併せて各色の rgba アルファ（防火0.6 等）も効かせる。
+    paint: { 'fill-color': fill, 'fill-opacity': FILL_OPACITY, 'fill-outline-color': outline },
   }
 }
 

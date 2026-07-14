@@ -2,8 +2,8 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-import { getBasemapStyle } from './basemap'
-import { THEMES, type ThemeDef, dotColor, hoverHtml, legendFor, paintFor, popupHtml } from './layers'
+import { getBasemapStyle, type Basemap } from './basemap'
+import { THEMES, type ThemeDef, hoverHtml, legendFor, paintFor, popupHtml } from './layers'
 import { applyThemeAttr, initialTheme, type Theme } from './theme'
 import './style.css'
 
@@ -12,6 +12,7 @@ const DATA_ATTRIBUTION =
   '都市計画決定GISデータ（<a href="https://www.mlit.go.jp/toshi/tosiko/toshi_tosiko_tk_000182.html" target="_blank" rel="noopener">国土交通省 都市局</a>）'
 
 let theme: Theme = initialTheme()
+let base: Basemap = 'pale'
 applyThemeAttr(theme)
 
 const protocol = new Protocol()
@@ -19,7 +20,7 @@ maplibregl.addProtocol('pmtiles', protocol.tile)
 
 const map = new maplibregl.Map({
   container: 'map',
-  style: getBasemapStyle(theme),
+  style: getBasemapStyle(base, theme),
   center: [139.74, 35.68],
   zoom: 10,
   attributionControl: false,
@@ -56,33 +57,23 @@ function addDataLayers(): void {
   }
 }
 
-function onceStyleReady(cb: () => void): void {
-  if (map.isStyleLoaded()) {
-    cb()
-    return
-  }
-  const h = (): void => {
-    if (map.isStyleLoaded()) {
-      map.off('styledata', h)
-      cb()
-    }
-  }
-  map.on('styledata', h)
-}
-
 // ---- テーマ切替 ----
 const themeBtn = document.getElementById('theme-btn') as HTMLButtonElement
 const renderThemeBtn = (): void => {
   themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙'
 }
-function setTheme(next: Theme): void {
-  theme = next
+// 背景スタイル差し替え後、新スタイルの読み込み完了（styledata）を待ってデータ層を再追加する。
+// setStyle 直後は旧スタイルが loaded 扱いのままのことがあり、即時追加すると差し替えで消えるため。
+function reloadStyle(): void {
+  map.setStyle(getBasemapStyle(base, theme))
+  map.once('styledata', () => addDataLayers())
+}
+themeBtn.addEventListener('click', () => {
+  theme = theme === 'dark' ? 'light' : 'dark'
   applyThemeAttr(theme)
   renderThemeBtn()
-  map.setStyle(getBasemapStyle(theme))
-  onceStyleReady(addDataLayers)
-}
-themeBtn.addEventListener('click', () => setTheme(theme === 'dark' ? 'light' : 'dark'))
+  reloadStyle()
+})
 
 // ---- パネル開閉 ----
 const panel = document.getElementById('panel') as HTMLElement
@@ -95,19 +86,31 @@ collapseBtn.addEventListener('click', () => {
   renderCollapseBtn()
 })
 
-// ---- レイヤートグル ----
+// ---- レイヤートグル（凡例を各レイヤー直下にインライン表示） ----
 const layersDiv = document.getElementById('layers') as HTMLElement
-function setLayerVisible(def: ThemeDef, on: boolean): void {
-  def.on = on
-  const id = layerId(def.key)
-  if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
-  renderLegend()
+
+function legendMarkup(def: ThemeDef): string {
+  const items = legendFor(def)
+  if (items.length <= 1) {
+    const c = items[0]?.color ?? 'rgba(150,150,150,1)'
+    return `<span class="lg-bar" style="background:${c}"></span>`
+  }
+  return items
+    .map(
+      (it) =>
+        `<span class="lg-row"><span class="lg-sw" style="background:${it.color}"></span>${it.label}</span>`,
+    )
+    .join('')
 }
+
 function buildToggles(): void {
   for (const def of THEMES) {
+    const item = document.createElement('div')
+    item.className = 'layer-item'
+    item.dataset.key = def.key
+
     const label = document.createElement('label')
     label.className = 'toggle'
-    label.dataset.key = def.key
 
     const input = document.createElement('input')
     input.type = 'checkbox'
@@ -119,44 +122,75 @@ function buildToggles(): void {
     const text = document.createElement('span')
     text.className = 't-label'
     text.textContent = def.name
-    const dot = document.createElement('span')
-    dot.className = 't-dot'
-    dot.style.background = dotColor(def)
 
-    label.append(input, sw, text, dot)
-    layersDiv.append(label)
+    label.append(input, sw, text)
+
+    const legend = document.createElement('div')
+    legend.className = 'layer-legend'
+    legend.innerHTML = legendMarkup(def)
+    legend.hidden = !def.on
+
+    item.append(label, legend)
+    layersDiv.append(item)
   }
 }
+
+function setLayerVisible(def: ThemeDef, on: boolean): void {
+  def.on = on
+  const id = layerId(def.key)
+  if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none')
+  const legend = layersDiv.querySelector<HTMLElement>(`.layer-item[data-key="${def.key}"] .layer-legend`)
+  if (legend) legend.hidden = !on
+}
+
 const allOffBtn = document.getElementById('all-off') as HTMLButtonElement
 allOffBtn.addEventListener('click', () => {
   for (const def of THEMES) {
     if (!def.on) continue
-    const input = layersDiv.querySelector<HTMLInputElement>(`.toggle[data-key="${def.key}"] input`)
+    const input = layersDiv.querySelector<HTMLInputElement>(`.layer-item[data-key="${def.key}"] input`)
     if (input) input.checked = false
     setLayerVisible(def, false)
   }
 })
 
-// ---- 凡例（表示中テーマのみ） ----
-const legendDiv = document.getElementById('legend') as HTMLElement
-function renderLegend(): void {
-  const active = THEMES.filter((t) => t.on)
-  if (!active.length) {
-    legendDiv.innerHTML = '<div class="legend-empty">レイヤーを選択してください</div>'
-    return
+// ---- 背景地図スイッチャー（右下） ----
+class BasemapControl implements maplibregl.IControl {
+  private el!: HTMLElement
+  onAdd(): HTMLElement {
+    this.el = document.createElement('div')
+    this.el.className = 'maplibregl-ctrl basemap-switch'
+    const defs: [Basemap, string][] = [
+      ['pale', '地図'],
+      ['photo', '写真'],
+    ]
+    for (const [b, label] of defs) {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.textContent = label
+      btn.dataset.base = b
+      btn.setAttribute('aria-selected', String(b === base))
+      btn.addEventListener('click', () => setBase(b))
+      this.el.append(btn)
+    }
+    return this.el
   }
-  legendDiv.innerHTML = active
-    .map((def) => {
-      const items = legendFor(def)
-      const swatches = items
-        .map(
-          (it) =>
-            `<div class="legend-row"><span class="legend-sw" style="background:${it.color}"></span>${it.label}</div>`,
-        )
-        .join('')
-      return `<div class="legend-block"><div class="legend-title">${def.name}</div>${swatches}</div>`
-    })
-    .join('')
+  onRemove(): void {
+    this.el.remove()
+  }
+  sync(): void {
+    for (const btn of this.el.querySelectorAll<HTMLButtonElement>('button')) {
+      btn.setAttribute('aria-selected', String(btn.dataset.base === base))
+    }
+  }
+}
+const basemapCtrl = new BasemapControl()
+map.addControl(basemapCtrl, 'bottom-right')
+
+function setBase(next: Basemap): void {
+  if (next === base) return
+  base = next
+  basemapCtrl.sync()
+  reloadStyle()
 }
 
 // ---- ホバーツールチップ ----
@@ -198,5 +232,7 @@ map.on('click', (e) => {
 renderThemeBtn()
 renderCollapseBtn()
 buildToggles()
-renderLegend()
 map.on('load', addDataLayers)
+
+// デバッグ/外部連携用にマップを公開
+;(window as unknown as { __map: maplibregl.Map }).__map = map

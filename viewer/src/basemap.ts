@@ -86,7 +86,29 @@ function buildDarkStyle(): StyleSpecification {
 
 let darkStyleCache: StyleSpecification | null = null
 
-export function getBasemapStyle(theme: Theme): StyleSpecification {
+export type Basemap = 'pale' | 'photo'
+
+/** 地理院 全国最新写真（シームレス）ラスタスタイル。 */
+function photoStyle(): StyleSpecification {
+  return {
+    version: 8,
+    glyphs: (paleStyle as StyleSpecification).glyphs,
+    sources: {
+      photo: {
+        type: 'raster',
+        tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
+        tileSize: 256,
+        maxzoom: 18,
+        attribution:
+          '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル（全国最新写真）</a>',
+      },
+    },
+    layers: [{ id: 'photo', type: 'raster', source: 'photo' }],
+  } as StyleSpecification
+}
+
+export function getBasemapStyle(base: Basemap, theme: Theme): StyleSpecification {
+  if (base === 'photo') return photoStyle()
   if (theme === 'light') return paleStyle as StyleSpecification
   if (!darkStyleCache) darkStyleCache = buildDarkStyle()
   return darkStyleCache

@@ -1,0 +1,16 @@
+import { chromium } from 'playwright'
+const OUT = '/tmp/claude-1000/-mnt-c-Users-yshiw-Documents-GIS-ksj-toshi-tosiko-tk/20a2c2d7-996d-421e-badb-3a22f0991430/scratchpad'
+const b = await chromium.launch({ headless: true, args: ['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'] })
+const page = await b.newPage({ viewport: { width: 1040, height: 820 } })
+await page.goto('http://localhost:8000/', { waitUntil: 'networkidle' })
+await page.waitForTimeout(5000)
+const st = async () => page.evaluate(() => { const m=window.__map; return {src:!!m.getSource('youto'),lyr:!!m.getLayer('youto-lyr')} })
+console.log('初期:', JSON.stringify(await st()))
+await page.click('.basemap-switch button[data-base="photo"]')
+await page.waitForTimeout(9000)
+console.log('写真:', JSON.stringify(await st()))
+await page.screenshot({ path: `${OUT}/shot-photo3.png` })
+await page.click('.basemap-switch button[data-base="pale"]')
+await page.waitForTimeout(6000)
+console.log('地図に戻す:', JSON.stringify(await st()))
+await b.close(); console.log('done')
