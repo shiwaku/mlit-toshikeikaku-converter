@@ -291,6 +291,8 @@ map.on('click', (e) => {
 })
 
 // ---- 初期化 ----
+const buildEl = document.getElementById('build-ver')
+if (buildEl) buildEl.textContent = `build: ${__BUILD_TIME__}`
 renderThemeBtn()
 buildToggles()
 // スマホでは初期状態でパネルを畳んで地図を広く見せる

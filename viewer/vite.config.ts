@@ -65,4 +65,7 @@ export default defineConfig({
   base: './',
   plugins: [pmtilesDevServer()],
   server: { port: 8000 },
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC'),
+  },
 })
