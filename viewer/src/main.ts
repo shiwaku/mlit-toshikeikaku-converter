@@ -314,32 +314,39 @@ function setBase(next: Basemap): void {
 }
 
 // ---- ホバーツールチップ ----
+// ホバーが使える環境（マウス等）のみ有効化する。タッチ端末ではタップ時に
+// ブラウザが mousemove を擬似発火するため、クリックポップアップと同時に
+// ツールチップも表示され「ポップアップが2つ出る」ように見えてしまう。
 const tooltip = document.getElementById('tooltip') as HTMLElement
-map.on('mousemove', (e) => {
-  const ids = activeLayerIds()
-  const feats = ids.length ? map.queryRenderedFeatures(e.point, { layers: ids }) : []
-  if (feats.length) {
-    const f = feats[0]
-    const key = keyFromLayer(f.layer.id)
-    tooltip.innerHTML = hoverHtml(key, defOf(key)?.name ?? key, f.properties as Record<string, unknown>)
-    tooltip.style.left = `${e.point.x}px`
-    tooltip.style.top = `${e.point.y}px`
-    tooltip.hidden = false
-    map.getCanvas().style.cursor = 'pointer'
-  } else {
+const canHover = window.matchMedia('(hover: hover)').matches
+if (canHover) {
+  map.on('mousemove', (e) => {
+    const ids = activeLayerIds()
+    const feats = ids.length ? map.queryRenderedFeatures(e.point, { layers: ids }) : []
+    if (feats.length) {
+      const f = feats[0]
+      const key = keyFromLayer(f.layer.id)
+      tooltip.innerHTML = hoverHtml(key, defOf(key)?.name ?? key, f.properties as Record<string, unknown>)
+      tooltip.style.left = `${e.point.x}px`
+      tooltip.style.top = `${e.point.y}px`
+      tooltip.hidden = false
+      map.getCanvas().style.cursor = 'pointer'
+    } else {
+      tooltip.hidden = true
+      map.getCanvas().style.cursor = ''
+    }
+  })
+  map.on('mouseout', () => {
     tooltip.hidden = true
-    map.getCanvas().style.cursor = ''
-  }
-})
-map.on('mouseout', () => {
-  tooltip.hidden = true
-})
+  })
+}
 
 // ---- クリックポップアップ ----
 map.on('click', (e) => {
   const ids = activeLayerIds()
   const feats = ids.length ? map.queryRenderedFeatures(e.point, { layers: ids }) : []
   if (!feats.length) return
+  tooltip.hidden = true // 念のため（ポップアップとツールチップの二重表示防止）
   const f = feats[0]
   const key = keyFromLayer(f.layer.id)
   new maplibregl.Popup({ closeButton: true, maxWidth: '300px' })

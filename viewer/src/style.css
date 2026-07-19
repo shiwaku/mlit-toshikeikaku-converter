@@ -317,6 +317,8 @@ body {
 
 .lg-bar {
   display: block;
+  /* 全幅だと線が長すぎて凡例に見えないため、短いスウォッチにする */
+  width: 48px;
   height: 8px;
   border-radius: 4px;
   border: 1px solid var(--line-2);
