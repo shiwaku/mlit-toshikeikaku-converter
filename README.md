@@ -71,22 +71,62 @@ make catalog
 を実行します。PMTiles バイナリは git には置かず Release アセットとして管理するため、
 **過去の版は過去の Release として保持**されます。
 
+## 生成データ（PMTiles）の入手 — GitHub Releases
+
+生成された PMTiles は **git リポジトリの中には入っていません**（`git clone` しても
+`*.pmtiles` は含まれません）。**GitHub Releases** に版ごとに添付して配布しています。
+
+### GitHub Releases とは
+
+GitHub がリポジトリごとに提供している**ファイル配布機能**です。git のタグ
+（ある時点のスナップショットの目印）に、タイトル・説明文・**添付ファイル（Assets）**を
+付けて公開できます。ソースコードのように差分管理されるものではなく、
+「この版の完成品一式」を棚に並べるイメージです。
+
+本プロジェクトで使い分けは次のとおりです。
+
+| 置き場 | 内容 | 理由 |
+| --- | --- | --- |
+| git リポジトリ | 変換コード・`versions.json`（版の台帳）・`CATALOG.md` | テキストで差分管理に向く |
+| **GitHub Releases** | `*.pmtiles` 全26テーマ + `manifest.json` | 合計 260MB 超のバイナリ。git に置くと履歴が肥大化し、100MB 超は GitHub が拒否。Releases は1ファイル2GBまで・帯域無料 |
+
+### リポジトリからの辿り方
+
+1. リポジトリのトップページ https://github.com/shiwaku/mlit-urban-planning-converter を開く
+2. **右サイドバー**の「**Releases**」欄（`Latest` バッジ付き）をクリック
+   - 見当たらない場合は URL 末尾に `/releases` を付ける →
+     https://github.com/shiwaku/mlit-urban-planning-converter/releases
+3. リリース（例: `都市計画決定GISデータ 20260707`）の「**Assets**」を展開
+4. `youto.pmtiles` などをクリックするとダウンロードされる
+
+### URL の使い方
+
+```bash
+# 常に最新版を指す固定 URL（releases/latest/download/<ファイル名>）
+https://github.com/shiwaku/mlit-urban-planning-converter/releases/latest/download/youto.pmtiles
+
+# 特定の版に固定したい場合（releases/download/<タグ>/<ファイル名>）
+https://github.com/shiwaku/mlit-urban-planning-converter/releases/download/data-20260707/youto.pmtiles
+```
+
+- データ更新のたびに `data-<YYYYMMDD>` という新しいリリースが追加され、
+  `latest` は自動的に新版を指すようになります。**過去の版のリリースはそのまま残る**ため、
+  タグ指定 URL は再現性のある固定参照として使えます
+- 収録ファイルの一覧・サイズは [`CATALOG.md`](CATALOG.md)、
+  版の履歴は [`versions.json`](versions.json) を参照してください
+- QGIS ではこの URL をそのまま PMTiles ソースとして指定できます
+
 ## Web 地図での利用
 
-最新版の PMTiles は Release の固定 URL から取得できます:
-
-```
-https://github.com/shiwaku/mlit-urban-planning-converter/releases/latest/download/youto.pmtiles
-```
-
 > ⚠️ Release アセットは CORS ヘッダを返さないため、ブラウザから直接 fetch（Range 取得）はできません。
-> Web 地図に組み込む場合は PMTiles を自分のホスト（同一オリジン）へ配置してください。
+> Web 地図に組み込む場合は PMTiles を自分のホスト（同一オリジン）へ配置してください
+> （本プロジェクトのビューアも、デプロイ時に Release から PMTiles をコピーして同一オリジンで配信しています）。
 
 ### ビューア（`viewer/`）
 
 MapLibre GL JS + [pmtiles](https://github.com/protomaps/PMTiles) + 国土地理院 最適化ベクトルタイルの
 モダンなビューア（Vite + TypeScript / ライト・ダークテーマ）を同梱しています。
-用途地域などの配色は [都市計画情報](https://toshikeikaku-info.jp/) を参考にしています。
+用途地域などの配色は [全国都市計画GISビューア](https://toshikeikaku-info.jp/) を参考にしています。
 
 ```bash
 cd viewer
